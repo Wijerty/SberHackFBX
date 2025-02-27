@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Транскрибация речи</title>
+</head>
+<body>
+    <h1>Загрузите аудио или видеофайл для транскрибации</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="audioFile" name="audioFile" accept="audio/*,video/*" required>
+        <button type="submit">Отправить</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData();
+            formData.append('file', document.getElementById('audioFile').files[0]);
+
+            const response = await fetch('/transcribe', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.error) {
+                document.getElementById('result').innerText = `Ошибка: ${result.error}`;
+            } else {
+                document.getElementById('result').innerText = result.message;
+            }
+        });
+    </script>
+</body>
+</html>
