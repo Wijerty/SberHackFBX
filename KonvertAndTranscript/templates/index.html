@@ -1,35 +1,222 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Транскрибация речи</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        form {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #progress {
+            display: none;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .hidden {
+            display: none;
+        }
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .file-info {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
-    <h1>Загрузите аудио или видеофайл для транскрибации</h1>
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" id="audioFile" name="audioFile" accept="audio/*,video/*" required>
-        <button type="submit">Отправить</button>
-    </form>
-    <div id="result"></div>
+    <div class="container">
+        <h1>Транскрибация речи в текст</h1>
+        <p>Загрузите аудио или видеофайл для транскрибации. Поддерживаемые форматы: MP3, WAV, FLAC, OGG, MP4, AVI, MKV, MOV.</p>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="file-input-wrapper">
+                <input type="file" id="audioFile" name="file" accept="audio/*,video/*" required>
+                <div id="fileInfo" class="file-info"></div>
+            </div>
+            <button type="submit" id="submitBtn">Транскрибировать</button>
+        </form>
+
+        <div id="progress" class="hidden">
+            <p>Выполняется транскрибация... Это может занять некоторое время для больших файлов.</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="statusMessage">Подготовка файла...</p>
+        </div>
+
+        <div id="resultContainer" class="hidden">
+            <h2>Результат транскрибации:</h2>
+            <div id="result"></div>
+            <button id="downloadBtn" class="hidden">Скачать результат (.txt)</button>
+        </div>
+    </div>
 
     <script>
+        // Обработка информации о выбранном файле
+        document.getElementById('audioFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const fileInfo = document.getElementById('fileInfo');
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                fileInfo.textContent = `${file.name} (${fileSizeMB} МБ)`;
+
+                // Предупреждение для больших файлов
+                if (file.size > 50 * 1024 * 1024) {
+                    fileInfo.innerHTML += '<br><strong>Внимание:</strong> Обработка большого файла может занять значительное время.';
+                }
+            }
+        });
+
+        // Обработка отправки формы
         document.getElementById('uploadForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
-            const formData = new FormData();
-            formData.append('file', document.getElementById('audioFile').files[0]);
+            const file = document.getElementById('audioFile').files[0];
+            if (!file) {
+                alert('Пожалуйста, выберите файл');
+                return;
+            }
 
-            const response = await fetch('/transcribe', {
-                method: 'POST',
-                body: formData
-            });
+            // Показываем индикатор прогресса
+            document.getElementById('progress').classList.remove('hidden');
+            document.getElementById('submitBtn').disabled = true;
 
-            const result = await response.json();
-            if (result.error) {
-                document.getElementById('result').innerText = `Ошибка: ${result.error}`;
-            } else {
-                document.getElementById('result').innerText = result.message;
+            // Анимация прогресса (имитация, так как мы не можем отслеживать реальный прогресс)
+            let progress = 0;
+            const progressFill = document.getElementById('progressFill');
+            const statusMessage = document.getElementById('statusMessage');
+
+            const progressInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += (90 - progress) / 50;
+                    progressFill.style.width = `${progress}%`;
+
+                    // Обновляем статусные сообщения
+                    if (progress < 10) {
+                        statusMessage.textContent = 'Подготовка файла...';
+                    } else if (progress < 30) {
+                        statusMessage.textContent = 'Конвертация в аудиоформат...';
+                    } else if (progress < 60) {
+                        statusMessage.textContent = 'Обработка аудио...';
+                    } else {
+                        statusMessage.textContent = 'Транскрибация речи...';
+                    }
+                }
+            }, 500);
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(progressInterval);
+                progressFill.style.width = '100%';
+                statusMessage.textContent = 'Завершено!';
+
+                const result = await response.json();
+
+                // Прячем индикатор прогресса через 1 секунду
+                setTimeout(() => {
+                    document.getElementById('progress').classList.add('hidden');
+                    document.getElementById('submitBtn').disabled = false;
+
+                    // Показываем результат
+                    document.getElementById('resultContainer').classList.remove('hidden');
+
+                    if (result.error) {
+                        document.getElementById('result').innerHTML = `<div style="color: red">Ошибка: ${result.error}</div>`;
+                    } else {
+                        document.getElementById('result').innerText = result.transcription || result.message;
+
+                        // Показываем кнопку скачивания, если есть транскрибация
+                        if (result.transcription) {
+                            const downloadBtn = document.getElementById('downloadBtn');
+                            downloadBtn.classList.remove('hidden');
+
+                            // Функция для скачивания текста
+                            downloadBtn.addEventListener('click', () => {
+                                const blob = new Blob([result.transcription], {type: 'text/plain;charset=utf-8'});
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${file.name.replace(/\.[^/.]+$/, '')}_transcription.txt`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            });
+                        }
+                    }
+                }, 1000);
+
+            } catch (error) {
+                clearInterval(progressInterval);
+                document.getElementById('progress').classList.add('hidden');
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('resultContainer').classList.remove('hidden');
+                document.getElementById('result').innerHTML = `<div style="color: red">Ошибка при отправке запроса: ${error.message}</div>`;
             }
         });
     </script>
