@@ -101,7 +101,7 @@ def transcribe():
         result = pipe(
             file_path,
             generate_kwargs={
-                "language": "ru",  # язык
+                "language": "en",  # язык
                 "task": "transcribe",  # явно укажите задачу транскрибации
                 # Удалите строку ниже, которая вызывает ошибку
                 # "condition_on_previous_text": True,
