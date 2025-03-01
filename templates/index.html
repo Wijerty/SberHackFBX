@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AiText - Анализатор текста и аудио</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>AiText Analyzer</h1>
+        <p>Определение авторства текста и транскрибация аудио</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="text-analysis">Анализ текста</button>
+        <button class="tab-btn" data-tab="audio-analysis">Анализ аудио/видео</button>
+    </div>
+
+    <div id="text-analysis" class="tab-content active">
+        <form id="text-form">
+            <textarea id="text-input" placeholder="Введите текст для анализа" rows="6" required></textarea>
+            <button type="submit">Анализировать текст</button>
+        </form>
+        <div id="text-results" class="results-container hidden">
+            <div class="result-section">
+                <h3>Первая модель</h3>
+                <p id="first-model-response"></p>
+            </div>
+            <div class="result-section">
+                <h3>Вторая модель</h3>
+                <p id="second-model-response"></p>
+            </div>
+            <div class="ai-probability">
+                <h3>Вероятность авторства</h3>
+                <div class="probability-bar">
+                    <div class="ai-bar" id="ai-probability-bar">ИИ: <span id="ai-probability-text">0%</span></div>
+                    <div class="human-bar" id="human-probability-bar">Человек: <span id="human-probability-text">0%</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="audio-analysis" class="tab-content">
+        <form id="audio-form" enctype="multipart/form-data">
+            <div class="file-upload">
+                <input type="file" id="audio-input" accept="audio/*,video/*" required>
+                <label for="audio-input" class="file-label">
+                    Выберите аудио или видео файл
+                </label>
+                <span id="file-chosen">Файл не выбран</span>
+            </div>
+            <button type="submit">Транскрибировать и анализировать</button>
+        </form>
+        <div id="audio-results" class="results-container hidden">
+            <div class="result-section">
+                <h3>Транскрибация</h3>
+                <p id="transcription-text"></p>
+            </div>
+            <div class="result-section">
+                <h3>Первая модель</h3>
+                <p id="audio-first-model-response"></p>
+            </div>
+            <div class="result-section">
+                <h3>Вторая модель</h3>
+                <p id="audio-second-model-response"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="loading-overlay" class="hidden">
+    <div class="loading-spinner"></div>
+    <p>Выполняется анализ...</p>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

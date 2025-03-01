@@ -1,8 +1,0 @@
-{
-  "name": "huggingface-chat",
-  "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "@huggingface/inference": "^1.2.3"
-  }
-}
