@@ -3,22 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AiText - Анализатор текста и аудио</title>
+    <title>XOM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-<div class="container">
-    <header>
-        <h1>AiText Analyzer</h1>
-        <p>Определение авторства текста и транскрибация аудио</p>
-    </header>
+<header>
+    <div class="header-menu">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="10" fill="#1A1A1A"/>
+                <path class="logo-spin" fill-rule="evenodd" clip-rule="evenodd" d="M11.75 8C9.67893 8 8 9.67893 8 11.75V14.75C8 16.8211 9.67893 18.5 11.75 18.5H14.75C15.7516 18.5 16.8404 18.6082 17.5487 19.3164C17.9262 19.6939 17.9262 20.3061 17.5486 20.6836C16.8404 21.3918 15.7516 21.5 14.75 21.5H11.75C9.67893 21.5 8 23.1789 8 25.25V28.25C8 30.3211 9.67893 32 11.75 32H14.75C16.8211 32 18.5 30.3211 18.5 28.25V25.25C18.5 24.2484 18.6082 23.1596 19.3164 22.4513C19.694 22.0738 20.306 22.0738 20.6836 22.4513C21.3918 23.1596 21.5 24.2484 21.5 25.25V28.25C21.5 30.3211 23.1789 32 25.25 32H28.25C30.3211 32 32 30.3211 32 28.25V25.25C32 23.1789 30.3211 21.5 28.25 21.5H25.25C24.2484 21.5 23.1596 21.3918 22.4514 20.6836C22.0738 20.3061 22.0738 19.6939 22.4513 19.3164C23.1596 18.6082 24.2484 18.5 25.25 18.5H28.25C30.3211 18.5 32 16.8211 32 14.75V11.75C32 9.67893 30.3211 8 28.25 8H25.25C23.1789 8 21.5 9.67893 21.5 11.75V14.75C21.5 15.7516 21.3918 16.8404 20.6836 17.5486C20.306 17.9262 19.694 17.9262 19.3164 17.5486C18.6082 16.8404 18.5 15.7516 18.5 14.75V11.75C18.5 9.67893 16.8211 8 14.75 8H11.75Z" fill="white"/>
+            </svg>
+        </div>
 
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="text-analysis">Анализ текста</button>
-        <button class="tab-btn" data-tab="audio-analysis">Анализ аудио/видео</button>
+        <div class="header-menu-row">
+            <div class="text-row">
+                <h1>XOM</h1>
+                <p>Определение авторства текста и транскрибация аудио</p>
+            </div>
+            <div class="text-row">
+                <a href="">Новости</a>
+                <a href="">Контакты</a>
+                <a href="">О нас</a>
+            </div>
+        </div>
     </div>
+</header>
 
-    <div id="text-analysis" class="tab-content active">
+<div class="tabs">
+    <button class="tab-btn active" data-tab="text-analysis">Анализ текста</button>
+    <button class="tab-btn" data-tab="audio-analysis">Анализ аудио/видео</button>
+</div>
+
+<div class="task-block-box">
+    <div id="text-analysis" class="tab-content active task-block">
+        <div class="double-text-block">
+            <h2>Анализ текста</h2>
+            <p>Введите текст для определения авторства (человек или ИИ)</p>
+        </div>
         <form id="text-form">
             <textarea id="text-input" placeholder="Введите текст для анализа" rows="6" required></textarea>
             <button type="submit">Анализировать текст</button>
@@ -41,17 +63,18 @@
             </div>
         </div>
     </div>
+</div>
 
-    <div id="audio-analysis" class="tab-content">
+<div class="task-block-box">
+    <div id="audio-analysis" class="tab-content task-block file-upload-block">
+        <div class="double-text-block">
+            <h2>Анализ аудио/видео</h2>
+            <p>Загрузите аудио или видео файл для транскрибации и анализа</p>
+        </div>
         <form id="audio-form" enctype="multipart/form-data">
-            <div class="file-upload">
-                <input type="file" id="audio-input" accept="audio/*,video/*" required>
-                <label for="audio-input" class="file-label">
-                    Выберите аудио или видео файл
-                </label>
-                <span id="file-chosen">Файл не выбран</span>
-            </div>
-            <button type="submit">Транскрибировать и анализировать</button>
+            <input type="file" id="audio-input" class="file-input" accept="audio/*,video/*" required>
+            <span id="file-chosen">Файл не выбран</span>
+            <button type="submit" class="check-button">Транскрибировать и анализировать</button>
         </form>
         <div id="audio-results" class="results-container hidden">
             <div class="result-section">
@@ -67,12 +90,14 @@
                 <p id="audio-second-model-response"></p>
             </div>
         </div>
+        <div class="upload-overlay">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none" class="loading-spinner">
+                <rect width="40" height="40" rx="10" fill="#1A1A1A"/>
+                <path class="logo-spin" fill-rule="evenodd" clip-rule="evenodd" d="M11.75 8C9.67893 8 8 9.67893 8 11.75V14.75C8 16.8211 9.67893 18.5 11.75 18.5H14.75C15.7516 18.5 16.8404 18.6082 17.5487 19.3164C17.9262 19.6939 17.9262 20.3061 17.5486 20.6836C16.8404 21.3918 15.7516 21.5 14.75 21.5H11.75C9.67893 21.5 8 23.1789 8 25.25V28.25C8 30.3211 9.67893 32 11.75 32H14.75C16.8211 32 18.5 30.3211 18.5 28.25V25.25C18.5 24.2484 18.6082 23.1596 19.3164 22.4513C19.694 22.0738 20.306 22.0738 20.6836 22.4513C21.3918 23.1596 21.5 24.2484 21.5 25.25V28.25C21.5 30.3211 23.1789 32 25.25 32H28.25C30.3211 32 32 30.3211 32 28.25V25.25C32 23.1789 30.3211 21.5 28.25 21.5H25.25C24.2484 21.5 23.1596 21.3918 22.4514 20.6836C22.0738 20.3061 22.0738 19.6939 22.4513 19.3164C23.1596 18.6082 24.2484 18.5 25.25 18.5H28.25C30.3211 18.5 32 16.8211 32 14.75V11.75C32 9.67893 30.3211 8 28.25 8H25.25C23.1789 8 21.5 9.67893 21.5 11.75V14.75C21.5 15.7516 21.3918 16.8404 20.6836 17.5486C20.306 17.9262 19.694 17.9262 19.3164 17.5486C18.6082 16.8404 18.5 15.7516 18.5 14.75V11.75C18.5 9.67893 16.8211 8 14.75 8H11.75Z" fill="white"/>
+            </svg>
+            <p>Выполняется анализ...</p>
+        </div>
     </div>
-</div>
-
-<div id="loading-overlay" class="hidden">
-    <div class="loading-spinner"></div>
-    <p>Выполняется анализ...</p>
 </div>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>

@@ -22,10 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     textForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const textInput = document.getElementById('text-input');
-        const loadingOverlay = document.getElementById('loading-overlay');
+        const textBlock = document.getElementById('text-analysis');
 
-        // Show loading overlay
-        loadingOverlay.classList.remove('hidden');
+        // Show loading state
+        textBlock.classList.add('loading');
         textResults.classList.add('hidden');
 
         try {
@@ -64,8 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Ошибка:', error);
             alert('Произошла ошибка при анализе текста');
         } finally {
-            // Hide loading overlay
-            loadingOverlay.classList.add('hidden');
+            // Hide loading state
+            textBlock.classList.remove('loading');
         }
     });
 
@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileChosen = document.getElementById('file-chosen');
     const audioForm = document.getElementById('audio-form');
     const audioResults = document.getElementById('audio-results');
+    const audioBlock = document.getElementById('audio-analysis');
 
     // File selection display
     audioInput.addEventListener('change', () => {
@@ -87,10 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Audio/Video Form Submission
     audioForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const loadingOverlay = document.getElementById('loading-overlay');
 
-        // Show loading overlay
-        loadingOverlay.classList.remove('hidden');
+        // Show loading state
+        audioBlock.classList.add('loading');
         audioResults.classList.add('hidden');
 
         const formData = new FormData();
@@ -121,8 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Ошибка:', error);
             alert('Произошла ошибка при обработке файла');
         } finally {
-            // Hide loading overlay
-            loadingOverlay.classList.add('hidden');
+            // Hide loading state after 2 seconds to show animation
+            setTimeout(() => {
+                audioBlock.classList.remove('loading');
+            }, 2000);
         }
     });
 });

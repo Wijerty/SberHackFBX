@@ -26,7 +26,7 @@ def analyze_text(user_text, first_prompt, second_prompt):
         tuple: (first_model_response, second_model_response) - ответы моделей
     """
     # URL API Hugging Face для моделей с параметром, сбрасывающим контекст
-    model_url = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1"
+    model_url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
 
     # Отправка запроса к первой модели
     combined_text_first = f"{first_prompt}\n\n{user_text}"
@@ -50,7 +50,7 @@ def analyze_text(user_text, first_prompt, second_prompt):
 
     return first_model_response, second_model_response
 
-def call_huggingface_api(url, input_text, api_key, max_retries=3, reset_context=True):
+def call_huggingface_api(url, input_text, api_key, max_retries=3, reset_context=False):
     """
     Вызывает API Hugging Face для получения ответа от модели с возможностью повторных попыток и сброса контекста.
 
