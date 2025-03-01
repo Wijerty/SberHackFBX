@@ -9,6 +9,13 @@ import tempfile
 import uuid
 from werkzeug.utils import secure_filename
 import warnings
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения
+load_dotenv()
+
+# Импортируем класс для определения авторства текста
+from ai_detector import AIDetector
 
 # Скрываем предупреждения FutureWarning
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -47,6 +54,19 @@ pipe = pipeline(
     return_timestamps=True,
     device=device,
 )
+
+# Получаем токен Hugging Face из переменной окружения
+hf_token = os.environ.get("HUGGINGFACE_TOKEN")
+
+# Инициализация детектора ИИ-текста с указанной моделью и токеном
+try:
+    # Пробуем сначала загрузить модель blameitonthemoon/AI_detected с токеном
+    ai_detector = AIDetector(model_name="blameitonthemoon/AI_detected", token=hf_token)
+except Exception as e:
+    print(f"Не удалось загрузить основную модель: {str(e)}")
+    print("Попытка использовать альтернативную модель...")
+    # Если не получилось, используем открытую модель
+    ai_detector = AIDetector(model_name="roberta-base-openai-detector")
 
 
 @app.route('/')
@@ -96,15 +116,12 @@ def transcribe():
         # Обработка аудио файлов
         print(f"Начинаем транскрибацию файла: {file_path}")
 
-        # Корректно используем параметры для языка русский без конфликта с forced_decoder_ids
-        # Измените этот участок в вашей функции transcribe (примерно строка 100)
+        # Корректно используем параметры для языка русский
         result = pipe(
             file_path,
             generate_kwargs={
-                "language": "en",  # язык
+                "language": "ru",  # язык
                 "task": "transcribe",  # явно укажите задачу транскрибации
-                # Удалите строку ниже, которая вызывает ошибку
-                # "condition_on_previous_text": True,
             },
             chunk_length_s=30  # можно переопределить для конкретных файлов
         )
@@ -120,10 +137,19 @@ def transcribe():
         # Вывод транскрибации в консоль и сохранение в файл
         print(f"Транскрибация завершена. Длина текста: {len(transcription)} символов")
 
+        # Определяем вероятность ИИ-авторства
+        print("Определение авторства текста (человек/ИИ)...")
+        ai_probability = ai_detector.detect(transcription)
+        human_probability = 100 - ai_probability
+
+        print(f"Результат определения авторства: ИИ: {ai_probability:.1f}%, Человек: {human_probability:.1f}%")
+
         # Сохраняем результат в текстовый файл
         txt_path = os.path.splitext(file_path)[0] + "_transcription.txt"
         with open(txt_path, 'w', encoding='utf-8') as f:
             f.write(transcription)
+            f.write("\n\n")
+            f.write(f"Вероятность авторства: ИИ: {ai_probability:.1f}%, Человек: {human_probability:.1f}%")
 
         print(f"Результат сохранен в файл: {txt_path}")
 
@@ -132,6 +158,8 @@ def transcribe():
             "status": "success",
             "message": "Транскрибация успешно завершена",
             "transcription": transcription,
+            "ai_probability": round(ai_probability, 1),
+            "human_probability": round(human_probability, 1),
             "file_path": txt_path
         })
 

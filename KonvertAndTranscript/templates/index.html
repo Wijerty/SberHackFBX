@@ -79,6 +79,42 @@
             font-size: 14px;
             color: #666;
         }
+        .authorship-result {
+            margin-top: 20px;
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #b8daff;
+        }
+        .meter-container {
+            width: 100%;
+            height: 30px;
+            background-color: #eee;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #FFC107);
+            transition: width 0.5s ease-in-out;
+        }
+        .meter-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .meter-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #000;
+            font-weight: bold;
+            text-shadow: 1px 1px 1px rgba(255,255,255,0.7);
+        }
     </style>
 </head>
 <body>
@@ -105,6 +141,20 @@
         <div id="resultContainer" class="hidden">
             <h2>Результат транскрибации:</h2>
             <div id="result"></div>
+
+            <div id="authorshipResult" class="authorship-result hidden">
+                <h3>Определение авторства текста:</h3>
+                <div class="meter-labels">
+                    <span>Человек</span>
+                    <span>ИИ</span>
+                </div>
+                <div class="meter-container">
+                    <div class="meter-fill" id="aiMeter"></div>
+                    <div class="meter-value" id="aiValue"></div>
+                </div>
+                <p id="authorshipConclusion"></p>
+            </div>
+
             <button id="downloadBtn" class="hidden">Скачать результат (.txt)</button>
         </div>
     </div>
@@ -156,8 +206,10 @@
                         statusMessage.textContent = 'Конвертация в аудиоформат...';
                     } else if (progress < 60) {
                         statusMessage.textContent = 'Обработка аудио...';
-                    } else {
+                    } else if (progress < 80) {
                         statusMessage.textContent = 'Транскрибация речи...';
+                    } else {
+                        statusMessage.textContent = 'Определение авторства текста...';
                     }
                 }
             }, 500);
@@ -190,6 +242,34 @@
                     } else {
                         document.getElementById('result').innerText = result.transcription || result.message;
 
+                        // Показываем результат определения авторства
+                        if (result.ai_probability !== undefined) {
+                            const authorshipResult = document.getElementById('authorshipResult');
+                            const aiMeter = document.getElementById('aiMeter');
+                            const aiValue = document.getElementById('aiValue');
+                            const conclusion = document.getElementById('authorshipConclusion');
+
+                            authorshipResult.classList.remove('hidden');
+
+                            // Устанавливаем значение шкалы (справа налево)
+                            const aiProb = result.ai_probability;
+                            aiMeter.style.width = `${aiProb}%`;
+                            aiValue.textContent = `${aiProb}% ИИ`;
+
+                            // Формируем заключение
+                            if (aiProb >= 80) {
+                                conclusion.textContent = "Текст с высокой вероятностью сгенерирован искусственным интеллектом.";
+                            } else if (aiProb >= 60) {
+                                conclusion.textContent = "Текст, вероятно, сгенерирован искусственным интеллектом.";
+                            } else if (aiProb >= 40) {
+                                conclusion.textContent = "Неоднозначный результат. Текст может быть как написан человеком, так и сгенерирован ИИ.";
+                            } else if (aiProb >= 20) {
+                                conclusion.textContent = "Текст, вероятно, написан человеком.";
+                            } else {
+                                conclusion.textContent = "Текст с высокой вероятностью написан человеком.";
+                            }
+                        }
+
                         // Показываем кнопку скачивания, если есть транскрибация
                         if (result.transcription) {
                             const downloadBtn = document.getElementById('downloadBtn');
@@ -197,7 +277,16 @@
 
                             // Функция для скачивания текста
                             downloadBtn.addEventListener('click', () => {
-                                const blob = new Blob([result.transcription], {type: 'text/plain;charset=utf-8'});
+                                // Формируем полный текст с результатами авторства
+                                let fullText = result.transcription;
+                                if (result.ai_probability !== undefined) {
+                                    fullText += "\n\n---------------------------------------\n";
+                                    fullText += `Определение авторства текста:\n`;
+                                    fullText += `ИИ: ${result.ai_probability}%\n`;
+                                    fullText += `Человек: ${result.human_probability}%`;
+                                }
+
+                                const blob = new Blob([fullText], {type: 'text/plain;charset=utf-8'});
                                 const url = URL.createObjectURL(blob);
                                 const a = document.createElement('a');
                                 a.href = url;
