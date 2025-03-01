@@ -60,16 +60,16 @@ def analyze_text_route():
     user_text = data['text']
 
     try:
+        # Определяем вероятность ИИ-авторства
+        ai_probability = ai_detector.detect(user_text)
+        human_probability = 100.0 - ai_probability
+
         # Анализируем текст с помощью модулей из AiText
         first_model_response, second_model_response = analyze_text(
             user_text,
             first_prompt,
             second_prompt
         )
-
-        # Определяем вероятность ИИ-авторства введенного текста
-        ai_probability = ai_detector.detect(user_text)
-        human_probability = 100 - ai_probability
 
         return jsonify({
             "status": "success",

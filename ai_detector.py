@@ -58,7 +58,7 @@ class AIDetector:
             chunk_size: Размер чанка для обработки длинных текстов
 
         Returns:
-            float: Вероятность того, что текст сгенерирован ИИ (0-100%)
+            float: Вероятность ИИ-авторства
         """
         try:
             # Для коротких текстов
@@ -78,25 +78,8 @@ class AIDetector:
             if probabilities:
                 return sum(probabilities) / len(probabilities)
             else:
-                return 0
+                return 0.0
 
         except Exception as e:
             print(f"Ошибка при определении авторства текста: {str(e)}")
-            return None
-
-    def _process_text(self, text):
-        """Обработка одного фрагмента текста"""
-        inputs = self.tokenizer(text, return_tensors="pt", truncation=True, max_length=512).to(self.device)
-
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-
-        probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
-        ai_probability = probabilities[0][1].item() * 100  # Процент ИИ
-
-        return ai_probability
-
-    def _split_text_into_chunks(self, text, chunk_size):
-        """Разбивает текст на чанки определенного размера"""
-        words = text.split()
-        return [' '.join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
+            return 0.0

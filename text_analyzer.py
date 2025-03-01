@@ -1,6 +1,7 @@
 import os
 import requests
 from dotenv import load_dotenv
+import time
 
 # Загружаем переменные окружения
 load_dotenv()
@@ -14,6 +15,7 @@ def analyze_text(user_text, first_prompt, second_prompt):
     Анализирует введенный пользователем текст, используя функциональность из AiText:
     1. Отправляет текст пользователя + первый промпт в первую модель
     2. Отправляет ответ первой модели + второй промпт во вторую модель
+    3. Сбрасывает контекст после каждого запроса
 
     Args:
         user_text (str): Текст, введенный пользователем
@@ -23,7 +25,7 @@ def analyze_text(user_text, first_prompt, second_prompt):
     Returns:
         tuple: (first_model_response, second_model_response) - ответы моделей
     """
-    # URL API Hugging Face для моделей
+    # URL API Hugging Face для моделей с параметром, сбрасывающим контекст
     model_url = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1"
 
     # Отправка запроса к первой модели
@@ -32,7 +34,8 @@ def analyze_text(user_text, first_prompt, second_prompt):
     first_model_response = call_huggingface_api(
         model_url,
         combined_text_first,
-        HF_API_KEY_FIRST
+        HF_API_KEY_FIRST,
+        reset_context=True  # Добавляем параметр сброса контекста
     )
 
     # Отправка запроса ко второй модели
@@ -41,19 +44,22 @@ def analyze_text(user_text, first_prompt, second_prompt):
     second_model_response = call_huggingface_api(
         model_url,
         combined_text_second,
-        HF_API_KEY_SECOND
+        HF_API_KEY_SECOND,
+        reset_context=True  # Добавляем параметр сброса контекста
     )
 
     return first_model_response, second_model_response
 
-def call_huggingface_api(url, input_text, api_key):
+def call_huggingface_api(url, input_text, api_key, max_retries=3, reset_context=True):
     """
-    Вызывает API Hugging Face для получения ответа от модели.
+    Вызывает API Hugging Face для получения ответа от модели с возможностью повторных попыток и сброса контекста.
 
     Args:
         url (str): URL API Hugging Face
         input_text (str): Входной текст для модели
         api_key (str): API ключ для доступа к модели
+        max_retries (int): Максимальное количество повторных попыток
+        reset_context (bool): Флаг для сброса предыдущего контекста
 
     Returns:
         str: Ответ модели
@@ -68,27 +74,51 @@ def call_huggingface_api(url, input_text, api_key):
         "parameters": {
             "max_tokens": 512,
             "return_full_text": False,
+            "temperature": 0.7,  # Добавляем температуру для более стабильного ответа
+            "timeout": 120,  # Увеличиваем таймаут до 2 минут
         }
     }
 
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()  # Проверяем статус ответа
+    # Добавляем параметр сброса контекста, если установлен флаг
+    if reset_context:
+        payload["parameters"]["reset_context"] = True
 
-        # Обрабатываем различные форматы ответа от Hugging Face
-        data = response.json()
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=130)
 
-        if isinstance(data, list) and len(data) > 0:
-            if "generated_text" in data[0]:
-                return data[0]["generated_text"]
+            # Обработка специфических HTTP-кодов
+            if response.status_code == 503:  # Service Unavailable
+                print(f"Сервис недоступен. Повторная попытка {attempt + 1}")
+                time.sleep(2 ** attempt)  # Экспоненциальная задержка
+                continue
+
+            response.raise_for_status()  # Проверяем статус ответа
+
+            # Обрабатываем различные форматы ответа от Hugging Face
+            data = response.json()
+
+            if isinstance(data, list) and len(data) > 0:
+                if "generated_text" in data[0]:
+                    return data[0]["generated_text"]
+                else:
+                    return str(data[0])
+            elif isinstance(data, dict) and "generated_text" in data:
+                return data["generated_text"]
             else:
-                return str(data[0])
-        elif isinstance(data, dict) and "generated_text" in data:
-            return data["generated_text"]
-        else:
-            return str(data)
+                return str(data)
 
-    except Exception as e:
-        print(f"Ошибка при вызове Hugging Face API: {str(e)}")
-        return f"Ошибка при получении ответа от модели: {str(e)}"
-        return f"Ошибка при получении ответа от модели: {str(e)}"
+        except requests.exceptions.RequestException as e:
+            print(f"Ошибка при вызове Hugging Face API (попытка {attempt + 1}): {str(e)}")
+
+            # Добавляем exponential backoff
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)
+            else:
+                # Если все попытки исчерпаны
+                error_message = f"Не удалось получить ответ от модели после {max_retries} попыток. Ошибка: {str(e)}"
+                print(error_message)
+                return error_message
+
+    # Если все попытки неудачны
+    return "Не удалось получить ответ от модели. Пожалуйста, попробуйте позже."
